@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Management System - Report Diagrams</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #f8fafc; padding: 2rem; color: #1e293b; }
+    h1 { text-align: center; font-size: 2rem; margin-bottom: 0.5rem; }
+    .subtitle { text-align: center; color: #64748b; margin-bottom: 2rem; font-size: 1rem; }
+    .diagram-container { background: white; border-radius: 16px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; }
+    .diagram-title { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.25rem; color: #0f172a; }
+    .diagram-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 1.5rem; }
+    .mermaid { text-align: center; }
+    @media print {
+      body { padding: 0; background: white; }
+      .diagram-container { break-inside: avoid; box-shadow: none; border: 1px solid #e2e8f0; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Leave Management System</h1>
+  <p class="subtitle">Adsul's Technical Campus — Report Diagrams</p>
+
+  <!-- 1. System Architecture -->
+  <div class="diagram-container">
+    <div class="diagram-title">1. System Architecture</div>
+    <div class="diagram-desc">High-level architecture showing the three-tier structure of the application.</div>
+    <pre class="mermaid">
+      graph TB
+        subgraph Frontend["Frontend (React + Vite)"]
+          A1["Login / Register"]
+          A2["Dashboard"]
+          A3["Leave Request"]
+          A4["My Leaves"]
+          A5["Approvals"]
+          A6["Admin Panel"]
+          A7["AI Assistant"]
+        end
+
+        subgraph Backend["Backend (Node.js + Express)"]
+          B1["Auth Routes"]
+          B2["Leave Routes"]
+          B3["AI Routes"]
+          B4["Middleware Auth"]
+          B5["AI Service"]
+        end
+
+        subgraph Database["Database (SQLite)"]
+          C1["Users Table"]
+          C2["Leaves Table"]
+          C3["Leave Balances Table"]
+        end
+
+        User["User Browser"] --> Frontend
+        Frontend -->|HTTP /api| Backend
+        Backend -->|SQL Queries| Database
+
+        style User fill:#1e3a5f,color:#fff
+        style Frontend fill:#2563eb,color:#fff
+        style Backend fill:#059669,color:#fff
+        style Database fill:#d97706,color:#fff
+    </pre>
+  </div>
+
+  <!-- 2. ER Diagram -->
+  <div class="diagram-container">
+    <div class="diagram-title">2. Entity Relationship Diagram</div>
+    <div class="diagram-desc">Database tables and their relationships.</div>
+    <pre class="mermaid">
+      erDiagram
+        USERS ||--o{ LEAVES : submits
+        USERS ||--o{ LEAVE_BALANCES : has
+        USERS ||--o{ LEAVES : approves
+
+        USERS {
+          int id PK
+          string name
+          string email UK
+          string password
+          string role
+          string department
+          string student_year
+          datetime created_at
+        }
+
+        LEAVES {
+          int id PK
+          int user_id FK
+          string leave_type
+          date start_date
+          date end_date
+          string reason
+          string status
+          int approved_by FK
+          string faculty_comment
+          datetime created_at
+          datetime updated_at
+        }
+
+        LEAVE_BALANCES {
+          int id PK
+          int user_id FK
+          string leave_type
+          int total_days
+          int used_days
+        }
+    </pre>
+  </div>
+
+  <!-- 3. Use Case Diagram -->
+  <div class="diagram-container">
+    <div class="diagram-title">3. Use Case Diagram</div>
+    <div class="diagram-desc">Actors and their interactions with the system.</div>
+    <pre class="mermaid">
+      graph TB
+        Student((Student))
+        Faculty((Faculty))
+        Admin((Admin))
+
+        subgraph System["Leave Management System"]
+          UC1["Register / Login"]
+          UC2["Submit Leave Request"]
+          UC3["View My Leaves"]
+          UC4["View Dashboard"]
+          UC5["Use AI Assistant"]
+          UC6["Approve / Reject Leaves"]
+          UC7["View Department Leaves"]
+          UC8["View All Leaves"]
+          UC9["View Department Stats"]
+          UC10["Manage System"]
+        end
+
+        Student --> UC1
+        Student --> UC2
+        Student --> UC3
+        Student --> UC4
+        Student --> UC5
+
+        Faculty --> UC1
+        Faculty --> UC6
+        Faculty --> UC7
+        Faculty --> UC4
+        Faculty --> UC5
+
+        Admin --> UC1
+        Admin --> UC6
+        Admin --> UC8
+        Admin --> UC9
+        Admin --> UC10
+        Admin --> UC4
+        Admin --> UC5
+    </pre>
+  </div>
+
+  <!-- 4. Leave Request Workflow -->
+  <div class="diagram-container">
+    <div class="diagram-title">4. Leave Request Workflow</div>
+    <div class="diagram-desc">Complete flow from leave submission to final decision.</div>
+    <pre class="mermaid">
+      flowchart TD
+        Start(["Student submits leave request"]) -->
+        Validate{"Validate input"}
+        Validate -->|"Invalid"| Error["Show error message"]
+        Error --> Start
+        Validate -->|"Valid"| Save["Save to database<br>Status: pending"]
+        Save --> Notify["Faculty notified via Approvals page"]
+        Notify --> Review{"Faculty/Admin reviews"}
+
+        Review -->|"Approve"| CheckBal{"Check leave balance"}
+
+        CheckBal -->|"Sufficient"| Deduct["Deduct from balance"]
+        Deduct --> Approved["Status: approved<br>Balance updated"]
+        Approved --> CommentA["Faculty adds comment"]
+        CommentA --> DoneA(["Student sees approved status"])
+
+        CheckBal -->|"Insufficient"| RejectBal["Auto-reject"]
+        RejectBal --> DoneR(["Status: rejected<br>Balance unchanged"])
+
+        Review -->|"Reject"| RejectManual["Status: rejected"]
+        RejectManual --> CommentR["Faculty adds reason"]
+        CommentR --> DoneR
+
+        Review -->|"Request Info"| Pending["Status: pending"]
+        Pending --> Start
+    </pre>
+  </div>
+
+  <!-- 5. Activity Diagram -->
+  <div class="diagram-container">
+    <div class="diagram-title">5. Activity Diagram — Leave Lifecycle</div>
+    <div class="diagram-desc">Activities performed by each actor during the leave process.</div>
+    <pre class="mermaid">
+      flowchart TB
+        subgraph Student_Activities["Student Activities"]
+          direction TB
+          S1["Login to system"]
+          S2["Fill leave form<br>(type, dates, reason)"]
+          S3["Optional: Use AI Reason Analyzer"]
+          S4["Submit leave request"]
+          S5["View leave status on Dashboard"]
+          S6["Check leave balance"]
+        end
+
+        subgraph System_Processes["System Processes"]
+          direction TB
+          P1["Validate input data"]
+          P2["Check balance availability"]
+          P3["Save leave with 'pending' status"]
+          P4["Notify faculty"]
+          P5["Update balance on approval"]
+        end
+
+        subgraph Faculty_Activities["Faculty / Admin Activities"]
+          direction TB
+          F1["View pending approvals"]
+          F2["Review leave details"]
+          F3["Optional: Generate AI comment"]
+          F4["Approve or reject"]
+          F5["Add comment / feedback"]
+        end
+
+        S1 --> S2 --> S3 --> S4
+        S4 --> P1 --> P2 --> P3 --> P4
+        P4 --> F1 --> F2 --> F3 --> F4 --> F5
+        F5 --> P5
+        P5 --> S5 --> S6
+    </pre>
+  </div>
+
+  <!-- 6. Sequence Diagram -->
+  <div class="diagram-container">
+    <div class="diagram-title">6. Sequence Diagram — Leave Request Interaction</div>
+    <div class="diagram-desc">Time-ordered interaction between components during a leave request.</div>
+    <pre class="mermaid">
+      sequenceDiagram
+        participant S as Student
+        participant F as Frontend (React)
+        participant B as Backend (Express)
+        participant DB as Database (SQLite)
+
+        S->>F: Fill leave form
+        S->>F: Click "Analyze with AI"
+        F->>B: POST /api/ai/analyze-reason
+        B->>B: Analyze reason text
+        B-->>F: Return suggested leave type
+        F-->>S: Show suggestion
+
+        S->>F: Submit leave request
+        F->>B: POST /api/leaves
+        B->>DB: Insert leave (status: pending)
+        DB-->>B: Confirm insert
+        B-->>F: Success response
+        F-->>S: Show success message
+
+        Note over F,DB: Faculty reviews later
+
+        participant Fac as Faculty
+        Fac->>F: View pending approvals
+        F->>B: GET /api/leaves/pending
+        B->>DB: Query pending leaves
+        DB-->>B: Return results
+        B-->>F: Display pending leaves
+
+        Fac->>F: Click Approve
+        F->>B: PUT /api/leaves/:id/approve
+        B->>DB: Update status to approved
+        B->>DB: Deduct from balance
+        DB-->>B: Confirm
+        B-->>F: Success
+        F-->>Fac: Show approved
+    </pre>
+  </div>
+
+  <!-- 7. Module Structure -->
+  <div class="diagram-container">
+    <div class="diagram-title">7. Application Module Structure</div>
+    <div class="diagram-desc">Component tree and module organization of the application.</div>
+    <pre class="mermaid">
+      graph TB
+        subgraph Root["Leave Management System"]
+          direction TB
+
+          subgraph BE["Backend (Node.js)"]
+            BE1["server.js - Entry Point"]
+            BE2["config/database.js - SQLite Setup"]
+            BE3["middleware/auth.js - JWT Auth"]
+            BE4["routes/auth.js - Login/Register"]
+            BE5["routes/leaves.js - Leave CRUD"]
+            BE6["routes/ai.js - AI Endpoints"]
+            BE7["services/aiService.js - AI Logic"]
+            BE8["seed.js - Database Seeder"]
+          end
+
+          subgraph FE["Frontend (React + Vite)"]
+            FE1["main.jsx - Entry Point"]
+            FE2["App.jsx - Router + Auth Provider"]
+            FE3["context/AuthContext.jsx"]
+            FE4["api/api.js - API Client"]
+
+            subgraph Pages["Pages"]
+              P1["Login.jsx"]
+              P2["Register.jsx"]
+              P3["Dashboard.jsx"]
+              P4["LeaveRequest.jsx"]
+              P5["MyLeaves.jsx"]
+              P6["PendingApprovals.jsx"]
+              P7["AdminPanel.jsx"]
+              P8["AIAssistant.jsx"]
+            end
+
+            subgraph Components["Components"]
+              C1["Navbar.jsx"]
+            end
+          end
+        end
+
+        style Root fill:#f1f5f9
+        style BE fill:#059669,color:#fff
+        style FE fill:#2563eb,color:#fff
+        style Pages fill:#3b82f6,color:#fff
+        style Components fill:#6366f1,color:#fff
+    </pre>
+  </div>
+
+  <!-- 8. Data Flow Diagram -->
+  <div class="diagram-container">
+    <div class="diagram-title">8. Data Flow Diagram (DFD Level 0)</div>
+    <div class="diagram-desc">How data flows between external entities and the system.</div>
+    <pre class="mermaid">
+      graph TB
+        Student([Student])
+        Faculty([Faculty])
+        Admin([Admin])
+
+        subgraph System["Leave Management System"]
+          direction TB
+          Process["Leave Management Process"]
+          Store1[(Users DB)]
+          Store2[(Leaves DB)]
+          Store3[(Balances DB)]
+        end
+
+        Student -->|"Login credentials"| Process
+        Process -->|"User data"| Store1
+        Store1 -->|"User info"| Process
+
+        Student -->|"Leave request<br>(type, dates, reason)"| Process
+        Process -->|"Store leave"| Store2
+        Process -->|"Check/update balance"| Store3
+
+        Faculty -->|"View pending"| Process
+        Process -->|"Pending leaves"| Store2
+        Store2 -->|"Leave data"| Process
+        Faculty -->|"Approve/Reject<br>+ comment"| Process
+        Process -->|"Update status"| Store2
+
+        Admin -->|"View all data"| Process
+        Process -->|"Statistics"| Store2
+        Store2 -->|"Aggregated data"| Process
+        Admin -->|"Manage system"| Process
+
+        Process -->|"Leave status"| Student
+        Process -->|"Approval list"| Faculty
+        Process -->|"Dashboard stats"| Admin
+
+        style Student fill:#1e3a5f,color:#fff
+        style Faculty fill:#8b5cf6,color:#fff
+        style Admin fill:#ef4444,color:#fff
+        style Process fill:#2563eb,color:#fff
+        style Store1 fill:#d97706,color:#fff
+        style Store2 fill:#d97706,color:#fff
+        style Store3 fill:#d97706,color:#fff
+    </pre>
+  </div>
+
+  <!-- 9. AI Features Diagram -->
+  <div class="diagram-container">
+    <div class="diagram-title">9. AI Features Architecture</div>
+    <div class="diagram-desc">How AI services process data and provide insights.</div>
+    <pre class="mermaid">
+      graph LR
+        subgraph Input["Input Sources"]
+          I1["Leave Reason Text"]
+          I2["User Leave History"]
+          I3["Leave Balance Data"]
+        end
+
+        subgraph AI["AI Service Module"]
+          direction TB
+          A1["Reason Analyzer<br>(Keyword Matching)"]
+          A2["Pattern Detector<br>(Statistical Analysis)"]
+          A3["Recommendation Engine<br>(Usage Analytics)"]
+          A4["Comment Generator<br>(Template-based)"]
+        end
+
+        subgraph Output["Output"]
+          O1["Suggested Leave Type"]
+          O2["Pattern Warnings"]
+          O3["Balance Alerts"]
+          O4["Professional Comments"]
+        end
+
+        I1 --> A1
+        I2 --> A2
+        I3 --> A3
+        I1 --> A4
+
+        A1 --> O1
+        A2 --> O2
+        A3 --> O3
+        A4 --> O4
+
+        subgraph Users["User Access"]
+          U1["Students"]
+          U2["Faculty"]
+          U3["Admin"]
+        end
+
+        O1 --> U1
+        O2 --> U1
+        O3 --> U1
+        O4 --> U2
+        O2 --> U3
+        O3 --> U3
+
+        style Input fill:#e0f2fe
+        style AI fill:#2563eb,color:#fff
+        style Output fill:#059669,color:#fff
+        style Users fill:#f0fdf4
+    </pre>
+  </div>
+
+  <!-- 10. Deployment Diagram -->
+  <div class="diagram-container">
+    <div class="diagram-title">10. Deployment Architecture</div>
+    <div class="diagram-desc">How the application is deployed and served.</div>
+    <pre class="mermaid">
+      graph TB
+        subgraph Client["Client Machine"]
+          Browser["Web Browser<br>(Chrome, Firefox, Edge)"]
+        end
+
+        subgraph DevServer["Development Environment"]
+          direction TB
+          Vite["Vite Dev Server<br>Port 3000"]
+          Proxy["API Proxy<br>/api → localhost:5000"]
+          React["React App<br>(Hot Reload)"]
+        end
+
+        subgraph ProdServer["Production Server"]
+          direction TB
+          Express["Express Server<br>Port 5000"]
+          Static["Static Files<br>(frontend/dist)"]
+          API["REST API"]
+        end
+
+        subgraph Data["Data Layer"]
+          SQLite["SQLite Database<br>leave_management.db"]
+        end
+
+        Browser -->|"Development"| Vite
+        Vite --> Proxy
+        Proxy -->|"/api requests"| Express
+
+        Browser -->|"Production"| Express
+        Express --> Static
+        Express --> API
+        API --> SQLite
+
+        style Client fill:#f1f5f9
+        style DevServer fill:#3b82f6,color:#fff
+        style ProdServer fill:#059669,color:#fff
+        style Data fill:#d97706,color:#fff
+    </pre>
+  </div>
+
+  <!-- 11. Department-wise Pie Chart -->
+  <div class="diagram-container">
+    <div class="diagram-title">11. Department-wise Leave Distribution</div>
+    <div class="diagram-desc">Proportion of leave requests by department.</div>
+    <pre class="mermaid">
+      pie title Leave Requests by Department
+        "Computer Engineering" : 35
+        "Mechanical Engineering" : 25
+        "Electrical Engineering" : 15
+        "Civil Engineering" : 12
+        "E&TC Engineering" : 8
+        "Other Departments" : 5
+    </pre>
+  </div>
+
+  <!-- 12. Year-wise Pie Chart -->
+  <div class="diagram-container">
+    <div class="diagram-title">12. Year-wise Leave Distribution (Students)</div>
+    <div class="diagram-desc">Leave requests breakdown by academic year.</div>
+    <pre class="mermaid">
+      pie title Leave Requests by Academic Year
+        "FE (First Year)" : 20
+        "SE (Second Year)" : 32
+        "TE (Third Year)" : 28
+        "BE (Final Year)" : 20
+    </pre>
+  </div>
+
+  <hr style="border: none; border-top: 2px solid #e2e8f0; margin: 2rem 0;">
+  <p style="text-align: center; color: #94a3b8; font-size: 0.85rem;">
+    Generated for Adsul's Technical Campus — Leave Management System Report
+  </p>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      themeVariables: {
+        primaryColor: '#2563eb',
+        primaryTextColor: '#fff',
+        primaryBorderColor: '#1d4ed8',
+        lineColor: '#64748b',
+        secondaryColor: '#f1f5f9',
+        tertiaryColor: '#e2e8f0',
+        fontSize: '14px'
+      },
+      flowchart: { useMaxWidth: true, htmlLabels: true },
+      pie: { textPosition: 0.5 }
+    });
+  </script>
+</body>
+</html>

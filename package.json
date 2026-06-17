@@ -1,0 +1,14 @@
+{
+  "name": "leave-management-system",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Adsul's Technical Campus - Leave Management System with AI features",
+  "scripts": {
+    "postinstall": "cd backend && npm install && cd ../frontend && npm install",
+    "build": "cd frontend && npm run build",
+    "start": "cd backend && node server.js",
+    "seed": "cd backend && node seed.js",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev"
+  }
+}
